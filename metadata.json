@@ -1,0 +1,7 @@
+{
+  "name": "Ethereal Particles: AI Hand-Controlled 3D Universe",
+  "description": "A high-performance 3D particle system built with Three.js, featuring real-time hand gesture control via camera and AI-powered theme generation using Gemini.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
