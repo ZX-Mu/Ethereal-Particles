@@ -1,13 +1,5 @@
 
-export type ParticleShape = 'heart' | 'flower' | 'star' | 'firework' | 'planet' | 'random';
-
-export interface ThemeConfig {
-  color: string;
-  shape: ParticleShape;
-  size: number;
-  count: number;
-  speed: number;
-}
+export type ParticleShape = 'heart' | 'star' | 'firework' | 'planet';
 
 export interface HandState {
   isOpen: boolean;

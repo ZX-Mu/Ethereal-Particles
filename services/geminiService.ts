@@ -7,7 +7,7 @@ export const generateAITheme = async (userPrompt: string) => {
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Suggest a visual theme for a 3D particle system based on this mood: "${userPrompt}". 
-    Choose from shapes: heart, flower, star, firework, planet. 
+    Choose from shapes: heart, star, firework, planet. 
     Provide a hexadecimal color and a recommended particle size (0.01 to 0.1).`,
     config: {
       responseMimeType: "application/json",
@@ -15,7 +15,7 @@ export const generateAITheme = async (userPrompt: string) => {
         type: Type.OBJECT,
         properties: {
           color: { type: Type.STRING },
-          shape: { type: Type.STRING, enum: ['heart', 'flower', 'star', 'firework', 'planet'] },
+          shape: { type: Type.STRING, enum: ['heart', 'star', 'firework', 'planet'] },
           particleSize: { type: Type.NUMBER },
           reasoning: { type: Type.STRING }
         },
@@ -25,7 +25,8 @@ export const generateAITheme = async (userPrompt: string) => {
   });
 
   try {
-    return JSON.parse(response.text);
+    const text = response.text || "{}";
+    return JSON.parse(text);
   } catch (e) {
     console.error("Failed to parse AI response", e);
     return null;
