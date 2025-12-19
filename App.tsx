@@ -10,7 +10,7 @@ const App: React.FC = () => {
   const [shapeColors, setShapeColors] = useState<Record<ParticleShape, string>>({
     heart: '#ff2a6d',
     star: '#fff9c4',
-    firework: '#ffcc00',
+    tree: '#0f5e34', // Forest Green
     planet: '#00eaff'
   });
 
@@ -166,7 +166,7 @@ const App: React.FC = () => {
         <div>
           <label className="text-[10px] uppercase tracking-[0.4em] text-white/40 font-black mb-5 block">Geometry Core</label>
           <div className="grid grid-cols-2 gap-4">
-            {(['heart', 'star', 'firework', 'planet'] as ParticleShape[]).map((s) => (
+            {(['heart', 'star', 'tree', 'planet'] as ParticleShape[]).map((s) => (
               <button
                 key={s}
                 onClick={() => setShape(s)}

@@ -17,10 +17,15 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
   const originalPositions = useRef<Float32Array | null>(null);
   
   const handStateRef = useRef<HandState>(handState);
+  const shapeRef = useRef<ParticleShape>(shape);
   
   useEffect(() => {
     handStateRef.current = handState;
   }, [handState]);
+
+  useEffect(() => {
+    shapeRef.current = shape;
+  }, [shape]);
 
   const PARTICLE_COUNT = 30000;
 
@@ -28,8 +33,6 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
     const positions = new Float32Array(PARTICLE_COUNT * 3);
     const colors = new Float32Array(PARTICLE_COUNT * 3);
     const col = new THREE.Color(baseColor);
-    const hsl = { h: 0, s: 0, l: 0 };
-    col.getHSL(hsl);
     
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       let x = 0, y = 0, z = 0;
@@ -46,7 +49,6 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
           z = (Math.sin(v) * 8) * (1 - volume * 0.5) * Math.abs(Math.sin(u));
           x *= 0.15; y *= 0.15; z *= 0.15;
           
-          // Tinted romantic variations based on base color
           const mix = Math.random();
           const tempCol = new THREE.Color(baseColor).offsetHSL(mix * 0.05 - 0.025, 0.1, -mix * 0.2);
           r = tempCol.r; g = tempCol.g; b = tempCol.b;
@@ -72,27 +74,87 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
           r *= brightness; g *= brightness; b *= brightness;
           break;
         }
-        case 'firework': {
-          const phi = Math.random() * Math.PI * 2;
-          const costheta = Math.random() * 2 - 1;
-          const theta = Math.acos(costheta);
-          const explosionR = Math.pow(Math.random(), 0.2) * 6.5;
-          x = explosionR * Math.sin(theta) * Math.cos(phi);
-          y = explosionR * Math.sin(theta) * Math.sin(phi);
-          z = explosionR * Math.cos(theta);
+        case 'tree': {
+          // Multi-tiered Christmas Tree Structure
+          const rand = Math.random();
           
-          // If the color is the default Gold (#ffcc00), show rainbow.
-          // Otherwise, show variations of the selected color.
-          if (baseColor.toLowerCase() === '#ffcc00') {
-            const streakIdx = Math.floor(i / 150);
-            const streakHue = (streakIdx * 0.1) % 1;
-            const streakCol = new THREE.Color().setHSL(streakHue, 0.9, 0.6);
-            r = streakCol.r; g = streakCol.g; b = streakCol.b;
-          } else {
-            const streakIdx = Math.floor(i / 150);
-            const shift = (streakIdx * 0.05) % 0.3;
-            const tempCol = new THREE.Color(baseColor).offsetHSL(shift - 0.15, 0, (Math.random() - 0.5) * 0.2);
-            r = tempCol.r; g = tempCol.g; b = tempCol.b;
+          // 1. TRUNK (Bottom ~5%)
+          if (rand < 0.05) {
+             const h = Math.random(); 
+             y = -4.5 + h * 1.5; // -4.5 to -3.0
+             const radius = 0.4 + Math.random() * 0.2;
+             const theta = Math.random() * Math.PI * 2;
+             x = radius * Math.cos(theta);
+             z = radius * Math.sin(theta);
+             
+             // Wood/Brown color
+             r = 0.4; g = 0.25; b = 0.1; 
+          } 
+          // 2. STAR (Top ~2%)
+          else if (rand < 0.07) {
+             const rStar = Math.pow(Math.random(), 1/3) * 0.6;
+             const theta = Math.random() * Math.PI * 2;
+             const phi = Math.acos(2 * Math.random() - 1);
+             x = rStar * Math.sin(phi) * Math.cos(theta);
+             y = 4.8 + rStar * Math.sin(phi) * Math.sin(theta);
+             z = rStar * Math.cos(phi);
+             
+             // Bright Gold/Yellow
+             r = 1.0; g = 0.9; b = 0.2;
+          }
+          // 3. LEAVES & ORNAMENTS (The rest)
+          else {
+             // 3 Conical Tiers
+             const tier = Math.random();
+             let yBase, yTop, rBase;
+             
+             if (tier < 0.4) { // Bottom Tier (Widest)
+                yBase = -3.0; yTop = 0.0; rBase = 3.5;
+             } else if (tier < 0.75) { // Middle Tier
+                yBase = -1.0; yTop = 2.5; rBase = 2.5;
+             } else { // Top Tier (Narrowest)
+                yBase = 1.5; yTop = 4.5; rBase = 1.5;
+             }
+             
+             const h = Math.random(); // 0 to 1 height in tier
+             y = yBase + h * (yTop - yBase);
+             
+             const maxR = rBase * (1 - h);
+             const radius = Math.sqrt(Math.random()) * maxR;
+             const theta = Math.random() * Math.PI * 2;
+             
+             x = radius * Math.cos(theta);
+             z = radius * Math.sin(theta);
+             
+             // Check if particle is near the surface (candidate for ornament)
+             const isSurface = radius > maxR * 0.85;
+             const isOrnament = isSurface && Math.random() < 0.12; // 12% chance on surface
+             
+             if (isOrnament) {
+                // Push ornament slightly out
+                x *= 1.1; z *= 1.1;
+                const decoType = Math.random();
+                if (decoType < 0.3) { // Red Ball
+                    r = 1.0; g = 0.1; b = 0.2;
+                } else if (decoType < 0.6) { // Gold Ball
+                    r = 1.0; g = 0.8; b = 0.1;
+                } else if (decoType < 0.8) { // Blue Ball
+                    r = 0.2; g = 0.5; b = 1.0;
+                } else { // White Light
+                    r = 1.0; g = 1.0; b = 1.0;
+                }
+             } else {
+                // Pine Green Variations
+                const noise = (Math.random() - 0.5) * 0.3;
+                const treeCol = new THREE.Color(baseColor).offsetHSL(noise * 0.2, 0, noise);
+                r = treeCol.r; g = treeCol.g; b = treeCol.b;
+                
+                // Add some "snow" dust on top of branches (upward facing surfaces)?
+                // Simple hack: random white specks inside volume
+                if (Math.random() < 0.05) {
+                   r = 0.9; g = 0.95; b = 1.0;
+                }
+             }
           }
           break;
         }
@@ -104,7 +166,6 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
             x = pR * Math.sin(pPhi) * Math.cos(pTheta);
             y = pR * Math.sin(pPhi) * Math.sin(pTheta);
             z = pR * Math.cos(pPhi);
-            // Core takes the base color
             r *= 0.9; g *= 0.9; b *= 0.9;
           } else {
             const rR = 5.0 + Math.random() * 2.0;
@@ -112,7 +173,6 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
             x = rR * Math.cos(rTheta);
             y = rR * Math.sin(rTheta) * 0.15;
             z = rR * Math.sin(rTheta) * 0.8;
-            // Rings are lighter/more iridescent
             const tempCol = new THREE.Color(baseColor).offsetHSL(0.05, -0.2, 0.2);
             r = tempCol.r; g = tempCol.g; b = tempCol.b;
           }
@@ -170,11 +230,13 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
     const animate = () => {
       frame = requestAnimationFrame(animate);
       const currentHandState = handStateRef.current;
+      const currentShape = shapeRef.current;
       const dist = currentHandState.distance;
 
       if (particlesRef.current && originalPositions.current && geometryRef.current) {
         const positions = geometryRef.current.attributes.position.array as Float32Array;
         
+        // Tree is a bit taller, adjust zoom scaling if needed, but 1.2 base is fine
         const finalExpansion = 1.2 + (Math.pow(dist, 2) * 12);
         
         for (let i = 0; i < PARTICLE_COUNT; i++) {
@@ -191,13 +253,26 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
         
         geometryRef.current.attributes.position.needsUpdate = true;
         
-        const rotationSpeed = 0.0015 + (dist * 0.02);
-        particlesRef.current.rotation.y += rotationSpeed;
-        particlesRef.current.rotation.x += rotationSpeed * 0.4;
+        // Rotation Logic:
+        // If it's the TREE, we want to STOP auto-rotation so the user can control view with hand.
+        // For other shapes, we keep the subtle auto-rotation.
+        if (currentShape !== 'tree') {
+            const rotationSpeed = 0.0015 + (dist * 0.02);
+            particlesRef.current.rotation.y += rotationSpeed;
+            particlesRef.current.rotation.x += rotationSpeed * 0.4;
+        } else {
+            // Smoothly dampen rotation to 0 for stability
+            particlesRef.current.rotation.y *= 0.9;
+            particlesRef.current.rotation.x *= 0.9;
+            // Optionally force upright if it stops at weird angle, but damping usually feels natural
+            if (Math.abs(particlesRef.current.rotation.y) < 0.001) particlesRef.current.rotation.y = 0;
+            if (Math.abs(particlesRef.current.rotation.x) < 0.001) particlesRef.current.rotation.x = 0;
+        }
 
         if (materialRef.current) {
           materialRef.current.opacity = 0.3 + (dist * 0.6);
-          materialRef.current.size = 0.04 + (dist * 0.07);
+          // Make particles slightly bigger for tree ornaments visibility
+          materialRef.current.size = (currentShape === 'tree' ? 0.05 : 0.04) + (dist * 0.07);
         }
 
         camera.position.x += (currentHandState.position.x * 2.5 - camera.position.x) * 0.05;

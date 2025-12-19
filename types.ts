@@ -1,5 +1,5 @@
 
-export type ParticleShape = 'heart' | 'star' | 'firework' | 'planet';
+export type ParticleShape = 'heart' | 'star' | 'tree' | 'planet';
 
 export interface HandState {
   isOpen: boolean;
