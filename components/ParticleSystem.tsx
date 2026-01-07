@@ -194,6 +194,8 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
   useEffect(() => {
     if (!mountRef.current) return;
 
+    console.log('🎨 Initializing ParticleSystem with shape:', shape, 'color:', color);
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -229,6 +231,7 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
     let frame = 0;
     const animate = () => {
       frame = requestAnimationFrame(animate);
+
       const currentHandState = handStateRef.current;
       const currentShape = shapeRef.current;
       const dist = currentHandState.distance;
@@ -295,9 +298,12 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', handleResize);
-      if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
+      if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
       geometry.dispose();
       material.dispose();
+      renderer.dispose();
     };
   }, []);
 
@@ -305,7 +311,12 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ shape, color, handState
     if (geometryRef.current) {
       const data = getShapeData(shape, color);
       originalPositions.current = new Float32Array(data.positions);
+
+      // Update both position and color attributes
+      geometryRef.current.setAttribute('position', new THREE.BufferAttribute(new Float32Array(data.positions), 3));
       geometryRef.current.setAttribute('color', new THREE.BufferAttribute(new Float32Array(data.colors), 3));
+
+      geometryRef.current.attributes.position.needsUpdate = true;
       geometryRef.current.attributes.color.needsUpdate = true;
     }
   }, [shape, color]);

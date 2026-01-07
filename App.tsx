@@ -28,10 +28,21 @@ const App: React.FC = () => {
   const lastDistance = useRef(0.25);
 
   useEffect(() => {
+    console.log('👋 Initializing hand tracking...');
+
+    // Check if MediaPipe is loaded
+    // @ts-ignore
+    if (!window.Hands) {
+      console.error('❌ MediaPipe Hands not loaded! Check if scripts are loaded correctly.');
+      return;
+    }
+
     // @ts-ignore
     const hands = new window.Hands({
       locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
+
+    console.log('✅ MediaPipe Hands initialized');
 
     hands.setOptions({
       maxNumHands: 1,
@@ -40,20 +51,29 @@ const App: React.FC = () => {
       minTrackingConfidence: 0.5
     });
 
+    let resultsCount = 0;
     hands.onResults((results: any) => {
+      resultsCount++;
+      if (resultsCount === 1) {
+        console.log('✅ Hand tracking results received');
+      }
+
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        if (!isHandDetected) {
+          console.log('👋 Hand detected!');
+        }
         setIsHandDetected(true);
         const landmarks = results.multiHandLandmarks[0];
         const center = landmarks[9];
-        
+
         const p1 = landmarks[4];
         const p2 = landmarks[8];
         const rawDist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-        
+
         const targetDistance = Math.min(Math.max((rawDist - 0.04) / 0.21, 0), 1);
         const smoothedDistance = lastDistance.current * 0.7 + targetDistance * 0.3;
         lastDistance.current = smoothedDistance;
-        
+
         setHandState({
           isOpen: smoothedDistance > 0.45,
           distance: smoothedDistance,
@@ -76,6 +96,13 @@ const App: React.FC = () => {
     });
 
     if (videoRef.current) {
+      console.log('📹 Starting camera...');
+      // @ts-ignore
+      if (!window.Camera) {
+        console.error('❌ MediaPipe Camera not loaded!');
+        return;
+      }
+
       // @ts-ignore
       const camera = new window.Camera(videoRef.current, {
         onFrame: async () => {
@@ -84,7 +111,11 @@ const App: React.FC = () => {
         width: 640,
         height: 480
       });
-      camera.start();
+      camera.start().then(() => {
+        console.log('✅ Camera started successfully');
+      }).catch((err: any) => {
+        console.error('❌ Camera failed to start:', err);
+      });
     }
   }, []);
 
